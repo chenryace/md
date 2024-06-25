@@ -110,6 +110,14 @@
               :charge="codeThemeChanged"
             ></style-option-menu>
           </el-dropdown-item>
+          <el-dropdown-item class="padding-left-3">
+            <style-option-menu
+              label="图注格式"
+              :options="config.legendOption"
+              :current="selectLegend"
+              :charge="legendChanged"
+            ></style-option-menu>
+          </el-dropdown-item>
           <el-dropdown-item
             divided
             class="padding-left-3"
@@ -201,6 +209,7 @@ export default {
       selectSize: ``,
       selectColor: ``,
       selectCodeTheme: config.codeThemeOption[2].value,
+      selectLegend: ``,
       form: {
         dialogVisible: false,
         title: ``,
@@ -254,6 +263,7 @@ export default {
       currentSize: (state) => state.currentSize,
       currentColor: (state) => state.currentColor,
       codeTheme: (state) => state.codeTheme,
+      legend: (state) => state.legend,
       nightMode: (state) => state.nightMode,
       currentCiteStatus: (state) => state.citeStatus,
       currentIsMacCodeBlock: (state) => state.isMacCodeBlock,
@@ -332,6 +342,11 @@ export default {
       this.selectCodeTheme = theme
       this.$emit(`refresh`)
     },
+    legendChanged(legend) {
+      this.setCurrentLegend(legend)
+      this.selectLegend = legend
+      this.$emit(`refresh`)
+    },
     statusChanged() {
       this.citeStatus = !this.citeStatus
       this.setCiteStatus(this.citeStatus)
@@ -350,10 +365,29 @@ export default {
     copy() {
       this.$emit(`startCopy`)
       setTimeout(() => {
+        function modifyHtmlStructure(htmlString) {
+          // 创建一个 div 元素来暂存原始 HTML 字符串
+          const tempDiv = document.createElement(`div`)
+          tempDiv.innerHTML = htmlString
+
+          const originalItems = tempDiv.querySelectorAll(`li > ul, li > ol`)
+
+          originalItems.forEach((originalItem) => {
+            originalItem.parentElement.insertAdjacentElement(
+              `afterend`,
+              originalItem
+            )
+          })
+
+          // 返回修改后的 HTML 字符串
+          return tempDiv.innerHTML
+        }
+
         solveWeChatImage()
 
         const clipboardDiv = document.getElementById(`output`)
         clipboardDiv.innerHTML = mergeCss(clipboardDiv.innerHTML)
+        clipboardDiv.innerHTML = modifyHtmlStructure(clipboardDiv.innerHTML)
 
         // 调整 katex 公式元素为行内标签，目的是兼容微信公众号渲染
         clipboardDiv.innerHTML = clipboardDiv.innerHTML
@@ -420,6 +454,7 @@ export default {
       this.colorChanged(this.config.colorOption[0].value)
       this.sizeChanged(this.config.sizeOption[2].value)
       this.codeThemeChanged(this.config.codeThemeOption[2].value)
+      this.legendChanged(this.config.legendOption[3].value)
       this.$emit(`cssChanged`)
       this.selectFont = this.currentFont
       this.selectSize = this.currentSize
@@ -441,6 +476,7 @@ export default {
       `setCurrentSize`,
       `setCssEditorValue`,
       `setCurrentCodeTheme`,
+      `setCurrentLegend`,
       `setWxRendererOptions`,
       `setIsMacCodeBlock`,
       `setIsEditOnLeft`,
@@ -451,6 +487,7 @@ export default {
     this.selectSize = this.currentSize
     this.selectColor = this.currentColor
     this.selectCodeTheme = this.codeTheme
+    this.selectLegend = this.legend
     this.citeStatus = this.currentCiteStatus
     this.isMacCodeBlock = this.currentIsMacCodeBlock
     this.isEditOnLeft = this.currentIsEditOnLeft
